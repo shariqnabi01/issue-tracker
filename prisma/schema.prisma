@@ -1,0 +1,54 @@
+generator client {
+  provider = "prisma-client-js"
+
+  // output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 1. ✅ schema.prisma (Update your Prisma schema)
+model User {
+  id       Int      @id @default(autoincrement())
+  name     String
+  email    String   @unique
+  password String
+  projects Project[] @relation("ProjectOwner")
+  issues   Issue[]   @relation("IssueAssignee")
+  createdIssues Issue[] @relation("IssueCreator")
+}
+
+model Project {
+  id        Int      @id @default(autoincrement())
+  name      String
+  owner     User     @relation("ProjectOwner", fields: [ownerId], references: [id])
+  ownerId   Int
+  issues    Issue[]
+  createdAt DateTime @default(now())
+}
+
+model Issue {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  status      Status   @default(OPEN)
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId   Int
+  assignee    User     @relation("IssueAssignee", fields: [assigneeId], references: [id])
+  assigneeId  Int
+  createdBy   User     @relation("IssueCreator", fields: [creatorId], references: [id])
+  creatorId   Int
+  createdAt   DateTime @default(now())
+}
+
+enum Status {
+  OPEN
+  IN_PROGRESS
+  CLOSED
+}
+
+// Run these commands after saving:
+// npx prisma migrate dev --name add-projects-issues
+// npx prisma generate
